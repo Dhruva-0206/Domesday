@@ -1,0 +1,9 @@
+#!/bin/sh
+# Strip AI attribution trailers from commit messages (project rule, see CLAUDE.md).
+msg="$1"
+tmp="$msg.tmp"
+grep -v -i -E '^(Co-Authored-By:|Claude-Session:)|Generated with' "$msg" > "$tmp"
+# Drop trailing blank lines left behind.
+sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$tmp" > "$msg"
+rm -f "$tmp"
+exit 0
