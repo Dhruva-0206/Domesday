@@ -1,0 +1,4 @@
+claim order (expect d, stale, a; b blocked): ['d', 'stale', 'a']
+[['a', 'claimed', 'ag9'], ['b', 'open', None], ['c', 'done', None], ['d', 'claimed', 'ag0'], ['stale', 'claimed', 'ag5']]
+shuffled 300 concurrent: active=[['city1299']], max out=[[1]], max in=[[1]], chain=[[299]], misordered edges=[[0]], valid_to gaps=[[0]]
+point-in-time 1150 -> [['city1150']]  999 -> []  5000 -> [['city1299']]

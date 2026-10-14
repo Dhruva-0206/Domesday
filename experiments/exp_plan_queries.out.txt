@@ -1,0 +1,50 @@
+supersede: active = [[1]] max in-degree = [[1]]
+point-in-time t=1150 -> [['city150'], ['city149'], ['city148'], ['city133'], ['city138'], ['city146']]
+Traceback (most recent call last):
+  File "D:\Domesday\experiments\exp_plan_queries.py", line 51, in <module>
+    res = list(ex.map(lambda i: g.query(CLAIM, {"now": 100, "agent": f"ag{i}", "lease_ms": 1000}).result_set,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DHRUVA\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 619, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DHRUVA\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 317, in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DHRUVA\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\DHRUVA\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\DHRUVA\AppData\Local\Programs\Python\Python311\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Domesday\experiments\exp_plan_queries.py", line 51, in <lambda>
+    res = list(ex.map(lambda i: g.query(CLAIM, {"now": 100, "agent": f"ag{i}", "lease_ms": 1000}).result_set,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Domesday\.venv\Lib\site-packages\falkordb\graph.py", line 125, in query
+    return self._query(q, params=params, timeout=timeout, read_only=False)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Domesday\.venv\Lib\site-packages\falkordb\graph.py", line 97, in _query
+    response = self.execute_command(*command)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Domesday\.venv\Lib\site-packages\redis\client.py", line 867, in execute_command
+    return self._execute_command(*args, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Domesday\.venv\Lib\site-packages\redis\client.py", line 889, in _execute_command
+    result = conn.retry.call_with_retry(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Domesday\.venv\Lib\site-packages\redis\retry.py", line 120, in call_with_retry
+    return do()
+           ^^^^
+  File "D:\Domesday\.venv\Lib\site-packages\redis\client.py", line 890, in <lambda>
+    lambda: self._send_command_parse_response(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Domesday\.venv\Lib\site-packages\redis\client.py", line 819, in _send_command_parse_response
+    return self.parse_response(conn, command_name, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Domesday\.venv\Lib\site-packages\redis\client.py", line 935, in parse_response
+    response = connection.read_response()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Domesday\.venv\Lib\site-packages\redis\connection.py", line 1437, in read_response
+    raise response
+redis.exceptions.ResponseError: Invalid input '(': expected ':', ',' or '}', errCtx: ...en' OR (t.status = 'claimed' AND t.lease_until < $now))   AND NOT EXISTS { MATCH (t)-[:DEPENDS_ON]->(d:Task) WHERE d.status <> 'done' } WITH t ORDER BY t.priori..., pos 164

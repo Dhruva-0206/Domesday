@@ -1,0 +1,84 @@
+
+=== 1. vector index: score semantics, params, post-filtering ===
+OK   'CREATE VECTOR INDEX FOR (e:Episode) ON (e.embedding) OPTIONS {dimensio': []
+query [1,0,0,0] -> [['same', 1.78799374418639e-07], ['close', 0.00611635178896467], ['orth', 1.0], ['opposite', 1.99999982120063]]
+OK   'RETURN vec.cosineDistance(vecf32([1,0,0,0]), vecf32([0.9,0.1,0,0]))': [[0.00611635178896467]]
+OK   'RETURN vec.euclideanDistance(vecf32([1,0,0,0]), vecf32([0,1,0,0]))': [[1.4142135623731]]
+OK   'post-filter WHERE after YIELD': [['same', 1.78799374418639e-07], ['orth', 1.0], ['opposite', 1.99999982120063]]
+OK   "MATCH (e:Episode {id:'same'}) RETURN e.embedding": [[[1.0, 0.0, 0.0, 0.0]]]
+OK   'wrong dimension insert': []
+OK   'update vector': [['orth']]
+after update, k=2 -> [['same', 1.78799374418639e-07], ['orth', 5.11115704385595e-05]]
+OK   'CALL db.indexes()': [['Episode', ['embedding'], OrderedDict([('embedding', ['VECTOR'])]), OrderedDict([('embedding', OrderedDict([('dimension', 4), ('similarityFunction', 'cosine'), ('M', 16), ('efConstruction', 200), ('efRuntime', 10)]))]), 'english', [], 'NODE', 'OPERATIONAL', OrderedDict([('fields', [OrderedDict([('name', 'vector:embedding')]), OrderedDict([('name', 'NONE_INDEXABLE_FIELDS')])])])]]
+
+=== 2. fulltext index: score scale, multi-field, params, updates ===
+FAIL "CALL db.idx.fulltext.createNodeIndex('Episode', 'raw_text', 'summary',": ResponseError: Received 4 arguments to procedure 'db.idx.fulltext.createNodeIndex', expected at most 1
+OK   "param query 'New York'": []
+OK   'OR query': []
+OK   'fuzzy': []
+OK   'raw question punctuation': []
+OK   'index sees SET update': []
+FAIL "CALL db.idx.fulltext.createNodeIndex('Entity', 'name')": ResponseError: Received 2 arguments to procedure 'db.idx.fulltext.createNodeIndex', expected at most 1
+OK   'entity name fulltext lowercase': []
+
+=== 3. multi-graph isolation ===
+tenant_a sees: [['secret-a']]
+tenant_b sees: [['secret-b']]
+per-graph index dims differ OK: [['Episode', ['embedding'], OrderedDict([('embedding', ['VECTOR'])])]] [['Episode', ['embedding'], OrderedDict([('embedding', ['VECTOR'])])]]
+list_graphs: ['exp_ft', 'exp_tenant_a', 'exp_tenant_b', 'exp_vec']
+OK   'MATCH (n) RETURN count(n)': [[1]]
+created 200 graphs in 0.09s
+
+=== 4. single-query supersession (match-set-create-link) ===
+OK   'supersede -> Austin': [['Austin', 0]]
+OK   'supersede -> San Francisco': [['San Francisco', 1]]
+OK   'supersede -> New York': [['New York', 1]]
+OK   'current state': [['New York']]
+OK   'history chain': [[['New York', 'San Francisco']], [['New York', 'San Francisco', 'Austin']]]
+
+=== 4b. failed query rolls back? (error mid-query) ===
+FAIL 'div by zero after create': ResponseError: Division by zero
+OK   'type error after create': [[None]]
+nodes after failed queries: [[1]]
+
+=== 5. concurrent supersession: single-query vs read-then-write ===
+atomic: 400 writes / 32 threads in 0.11s (3675/s); active=1; max/sum in-degree=[[1, 399.0]]; longest chain=[[399]]
+naive read-then-write: active=18, states superseded by >1 writer (forks)=379
+
+=== 6. concurrent MERGE on same entity name ===
+Google nodes after 200 concurrent MERGEs: [[1]]
+
+=== 7. atomic task claim ===
+40 agents, 20 tasks: 20 claims, unique=20, tasks claimed=[[20]]
+40 agents racing for task 999 -> winners: [[['a0']]]
+
+=== 8. client thread safety + mixed read/write throughput + queue limits ===
+8 threads: 3000 ops in 0.41s = 7276 ops/s, errors=0 
+32 threads: 3000 ops in 0.43s = 6982 ops/s, errors=0 
+64 threads: 3000 ops in 0.48s = 6233 ops/s, errors=0 
+config: 25 1000 0 16
+
+=== 9. temporal + math functions, subqueries, list params ===
+OK   'RETURN timestamp()': [[1792008379354]]
+FAIL 'RETURN datetime()': ResponseError: Unknown function 'datetime'
+OK   "RETURN localdatetime('2025-03-01T10:00:00')": [[datetime.datetime(2025, 3, 1, 10, 0, tzinfo=datetime.timezone.utc)]]
+OK   "RETURN date('2025-03-01')": [[datetime.date(2025, 3, 1)]]
+OK   'RETURN exp(-log(2) * 365 / 365.0)': [[0.5]]
+OK   'RETURN toFloat(timestamp() - 86400000)': [[1791921979356.0]]
+OK   'CALL { RETURN 1 AS x } RETURN x': [[1]]
+OK   'UNWIND $rows AS r CREATE (n:R) SET n = r RETURN count(n)': [[2]]
+OK   'WITH {a:1} AS m RETURN m.a, keys(m)': [[1, ['a']]]
+OK   "RETURN coalesce(null, 'x'), toLower('ABC') CONTAINS 'b'": [['x', True]]
+OK   'RETURN [x IN [3,1,2] WHERE x > 1 | x * 2]': [[[6, 4]]]
+OK   'MATCH (n:R) WITH n ORDER BY n.k DESC RETURN collect(n.k)[0..2]': [[[2, 1]]]
+
+=== 10. algorithms ===
+OK   "CALL algo.pageRank('Entity', 'REL') YIELD node, score RETURN node.name": [['Paris', 0.290593415498734], ['Acme', 0.236397057771683], ['Yan', 0.165892660617828], ['Bob', 0.127780452370644], ['Alice', 0.0896682366728783]]
+OK   "CALL algo.labelPropagation({nodeLabels:['Entity'], relationshipTypes:[": [[0, ['Alice', 'Bob', 'Acme', 'Paris']], [5, ['Yan']], [4, ['Zed']]]
+OK   "CALL algo.WCC({nodeLabels:['Entity']}) YIELD node, componentId RETURN ": [[0, ['Alice', 'Bob', 'Acme', 'Paris']], [4, ['Zed', 'Yan']]]
+OK   "MATCH (a:Entity {name:'Alice'}), (d:Entity {name:'Paris'}) WITH shorte": [[['Alice', 'Acme', 'Paris']]]
+FAIL "MATCH (a:Entity {name:'Alice'}), (d:Entity {name:'Paris'}) MATCH p = a": ResponseError: Source and destination must already be resolved to call allShortestPaths
+OK   "MATCH (a:Entity {name:'Alice'}) CALL algo.BFS(a, 3, 'REL') YIELD nodes": [[['Bob', 'Acme', 'Paris']]]
+OK   "CALL algo.betweenness({nodeLabels:['Entity']}) YIELD node, score RETUR": [['Alice', 0.0], ['Bob', 0.0], ['Acme', 2.0], ['Paris', 0.0], ['Zed', 0.0]]
+
+cleaned up

@@ -1,0 +1,49 @@
+=== fulltext DDL forms ===
+FAIL 'procedure with options map + 2 fields': ResponseError: Received 3 arguments to procedure 'db.idx.fulltext.createNodeIndex', expected at most 1
+OK   'DDL multi-field': []
+OK   "ft 'New York'": [['e1', 2.0], ['e3', 2.0]]
+OK   "ft 'york'": [['e1', 1.0], ['e3', 1.0]]
+OK   "ft 'live|lunch'": [['e2', 2.0], ['e3', 1.5]]
+OK   "ft '%Priay%1'": []
+OK   "ft 'friend'": [['e2', 0.666666666666667]]
+OK   "ft 'moving'": [['e1', 1.0]]
+OK   "ft 'where do I live?'": []
+OK   'ft "who\'s Priya"': []
+OK   "ft 'a-b'": [['e2', 0.666666666666667]]
+OK   "ft 'live lunch'": []
+OK   'sees SET': [['e2']]
+OK   'CALL db.indexes() YIELD label, properties, types RETURN label, properties, types': [['Episode', ['raw_text', 'summary', 'searchable_text'], OrderedDict([('raw_text', ['FULLTEXT']), ('summary', ['FULLTEXT']), ('searchable_text', ['FULLTEXT'])])]]
+
+=== vector: dimension mismatch, k > n, ANN + expansion in one query ===
+OK   '2-dim into 4-dim index': [[1]]
+OK   'bad node stored?': [['bad', [1.0, 2.0]]]
+OK   'k=50 with tiny index': [['good', 1.78799374418639e-07]]
+OK   'ANN + expansion': [['good', 0.999999821200626, ['Ada']]]
+OK   'second vector index on other label': []
+OK   'null embedding': [[1]]
+
+=== rollback on runtime error ===
+FAIL 'create then div0': ResponseError: Division by zero
+FAIL 'set then div0': ResponseError: Division by zero
+A nodes: [[0]] seed touched: [[None]]
+
+=== graph names ===
+OK   dd:user:alice [[1]]
+OK   dd/team/x [[1]]
+OK   dd__registry [[1]]
+OK   dd:team:acme-eng.v2 [[1]]
+
+=== allShortestPaths with bound ends ===
+OK   "MATCH (a:E {n:'a'}), (c:E {n:'c'}) WITH a, c MATCH p = allShortestPaths((a)-[:R*": [[['a', 'd', 'c']], [['a', 'b', 'c']]]
+FAIL "MATCH p = allShortestPaths((a:E {n:'a'})-[:R*]->(c:E {n:'c'})) RETURN [x IN node": ResponseError: Source and destination must already be resolved to call allShortestPaths
+
+=== read timeout (TIMEOUT=1000 in image args) ===
+OK   'slow read via query()': [[428571]]
+  took 0.07s
+  ro_query: [[428571]]
+  took 0.07s
+  ro_query timeout=20000: [[428571]]
+
+=== range index on epoch-ms timestamp ===
+plan: Limit |     Sort |         Project |             Filter |                 Node By Index Scan | (e:Episode)
+OK   'MATCH (e:Episode) WHERE e.ts >= $a AND e.ts < $b RETURN count(e)': [[100]]
