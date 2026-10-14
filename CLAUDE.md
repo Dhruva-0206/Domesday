@@ -10,7 +10,7 @@
 
 ## Environment
 - Build lives on `D:\Domesday` (C: has very little free space). Caches go on D: (`PIP_CACHE_DIR=D:\cache\pip`, `HF_HOME=D:\cache\hf`).
-- Local FalkorDB: `docker run -d --name domesday-falkor -p 6379:6379 -p 3001:3000 falkordb/falkordb:latest` (Browser on 3001 here because 3000 is taken on this machine). Python venv: `D:Domesday.venv` (3.11).
+- Local FalkorDB: `docker run -d --name domesday-falkor -p 6379:6379 -p 3001:3000 falkordb/falkordb:latest` (Browser on 3001 here because 3000 is taken on this machine). Python venv: `D:\Domesday\.venv` (Python 3.11).
 
 ## Project
 Domesday is a temporal knowledge-graph memory system for AI agents, built on FalkorDB for
